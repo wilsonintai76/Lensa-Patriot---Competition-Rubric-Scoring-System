@@ -1,0 +1,6 @@
+{
+  "name": "Lensa Patriot - Competition Rubric & Scoring System",
+  "description": "Official Likert-scale competition rubric grading, real-time leaderboards, customizable scoring criteria, and professional PDF scorecard export for SMK St. Thomas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
