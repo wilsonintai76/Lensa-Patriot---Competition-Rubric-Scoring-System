@@ -1,4 +1,5 @@
 export type CategoryId = 'Kategori A' | 'Kategori B' | 'Kategori C' | string;
+export type AppRole = 'peserta' | 'hakim' | 'penganjur';
 
 export interface LikertDescriptor {
   level: number;

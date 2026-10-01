@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RubricConfig, Entry, Judge, Scorecard } from './types/rubric';
+import { AppRole, RubricConfig, Entry, Judge, Scorecard } from './types/rubric';
 import {
   DEFAULT_RUBRIC_CONFIG,
   DEFAULT_JUDGES,
@@ -8,17 +8,36 @@ import {
 } from './data/defaultData';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
-import { ScoringCard } from './components/ScoringCard';
-import { Leaderboard } from './components/Leaderboard';
-import { RubricCustomizer } from './components/RubricCustomizer';
-import { EntryManager } from './components/EntryManager';
+import { PesertaPortal } from './components/portals/PesertaPortal';
+import { HakimPortal } from './components/portals/HakimPortal';
+import { PenganjurPortal } from './components/portals/PenganjurPortal';
 import { RulesModal } from './components/RulesModal';
 import { JudgePinModal } from './components/JudgePinModal';
 import { exportLeaderboardPDF } from './utils/pdfExport';
 
 export default function App() {
-  // Navigation State
-  const [activeTab, setActiveTab] = useState<'scoring' | 'leaderboard' | 'customizer' | 'entries' | 'rules'>('scoring');
+  // Active Role State: 'peserta' | 'hakim' | 'penganjur'
+  const [activeRole, setActiveRole] = useState<AppRole>(() => {
+    try {
+      const saved = localStorage.getItem('lp_active_role');
+      if (saved === 'peserta' || saved === 'hakim' || saved === 'penganjur') {
+        return saved;
+      }
+    } catch {
+      // fallback
+    }
+    return 'peserta';
+  });
+
+  const handleSelectRole = (role: AppRole) => {
+    setActiveRole(role);
+    try {
+      localStorage.setItem('lp_active_role', role);
+    } catch (e) {
+      console.warn(e);
+    }
+  };
+
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isHeaderPinModalOpen, setIsHeaderPinModalOpen] = useState(false);
 
@@ -90,7 +109,7 @@ export default function App() {
     return entries[0]?.id || 'entry-a01';
   });
 
-  // Sync to localStorage
+  // Sync state to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('lp_rubric_config', JSON.stringify(rubric));
@@ -122,6 +141,33 @@ export default function App() {
       console.warn('Could not save scorecards to localStorage', e);
     }
   }, [scorecards]);
+
+  // Check for scanned QR code URL params on load (?code=VID-A01 or ?entry=entry-id)
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const codeParam = urlParams.get('code');
+      const entryParam = urlParams.get('entry');
+      const roleParam = urlParams.get('role');
+
+      if (codeParam || entryParam) {
+        const found = entries.find(
+          (e) =>
+            (codeParam && e.code.toLowerCase() === codeParam.toLowerCase()) ||
+            (entryParam && e.id.toLowerCase() === entryParam.toLowerCase())
+        );
+
+        if (found) {
+          setActiveEntryId(found.id);
+          if (roleParam === 'hakim' || !roleParam) {
+            handleSelectRole('hakim');
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed parsing URL QR params', e);
+    }
+  }, [entries]);
 
   // Handler: Save or Update Scorecard
   const handleSaveScorecard = (updatedScorecard: Scorecard) => {
@@ -172,11 +218,11 @@ export default function App() {
 
   // Trigger Master PDF Export
   const handleExportMasterPDF = () => {
-    // Generate consolidated rows for the export
     const rows = entries.map((entry, idx) => {
       const entryScorecards = scorecards.filter((sc) => sc.entryId === entry.id);
       const judgeCount = entryScorecards.length;
       const isDisqualified = entryScorecards.some((sc) => sc.isDisqualified);
+      const disqualificationReason = entryScorecards.find((sc) => sc.isDisqualified)?.disqualificationReason;
 
       const totalGross = entryScorecards.reduce((sum, sc) => sum + sc.grossScore, 0);
       const totalPenalty = entryScorecards.reduce((sum, sc) => sum + sc.durationPenalty, 0);
@@ -200,6 +246,7 @@ export default function App() {
         avgFinalScore: isDisqualified ? 0 : judgeCount > 0 ? totalFinal / judgeCount : 0,
         criteriaAverages,
         isDisqualified,
+        disqualificationReason,
         rank: idx + 1,
         scorecards: entryScorecards
       };
@@ -226,37 +273,48 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Top Bar Navigation (3-Zone Contract) */}
+      {/* Top Bar Navigation with Distinct 3-Role Switcher */}
       <Header
-        activeTab={activeTab}
-        setActiveTab={(tab) => {
-          if (tab === 'rules') {
-            setIsRulesModalOpen(true);
-          } else {
-            setActiveTab(tab);
-          }
-        }}
+        activeRole={activeRole}
+        setActiveRole={handleSelectRole}
         judges={judges}
         activeJudgeId={activeJudgeId}
         setActiveJudgeId={setActiveJudgeId}
         onExportMasterPDF={handleExportMasterPDF}
         verifiedJudgeIds={verifiedJudgeIds}
         onOpenJudgePinModal={() => setIsHeaderPinModalOpen(true)}
+        onOpenRulesModal={() => setIsRulesModalOpen(true)}
       />
 
-      {/* Hero Section */}
+      {/* Cinematic Hero Section with Quick Portal Switcher */}
       <HeroSection
         rubric={rubric}
         totalEntries={entries.length}
         totalEvaluated={totalEvaluated}
-        onStartScoring={() => setActiveTab('scoring')}
-        onViewLeaderboard={() => setActiveTab('leaderboard')}
+        activeRole={activeRole}
+        onSelectRole={handleSelectRole}
       />
 
-      {/* Main Tab Content */}
-      <main className="flex-1">
-        {activeTab === 'scoring' && (
-          <ScoringCard
+      {/* Main Role-Specific Distinct Portals */}
+      <main className="flex-1 pb-12">
+        {/* ROLE 1: PORTAL PESERTA */}
+        {activeRole === 'peserta' && (
+          <PesertaPortal
+            entries={entries}
+            rubric={rubric}
+            scorecards={scorecards}
+            onOpenRules={() => setIsRulesModalOpen(true)}
+            onAddEntry={handleAddEntry}
+            onOpenInJudgeView={(entryId) => {
+              setActiveEntryId(entryId);
+              handleSelectRole('hakim');
+            }}
+          />
+        )}
+
+        {/* ROLE 2: PORTAL HAKIM */}
+        {activeRole === 'hakim' && (
+          <HakimPortal
             entries={entries}
             activeEntryId={activeEntryId}
             setActiveEntryId={setActiveEntryId}
@@ -269,40 +327,27 @@ export default function App() {
             onOpenRules={() => setIsRulesModalOpen(true)}
             verifiedJudgeIds={verifiedJudgeIds}
             onVerifyJudge={handleVerifyJudge}
+            onOpenJudgePinModal={() => setIsHeaderPinModalOpen(true)}
           />
         )}
 
-        {activeTab === 'leaderboard' && (
-          <Leaderboard
+        {/* ROLE 3: PORTAL PENGANJUR / PENTADBIR */}
+        {activeRole === 'penganjur' && (
+          <PenganjurPortal
             entries={entries}
-            scorecards={scorecards}
             judges={judges}
             rubric={rubric}
-            onSelectEntryToScore={(entryId) => {
-              setActiveEntryId(entryId);
-              setActiveTab('scoring');
-            }}
-          />
-        )}
-
-        {activeTab === 'customizer' && (
-          <RubricCustomizer
-            rubric={rubric}
-            onUpdateRubric={handleUpdateRubric}
-          />
-        )}
-
-        {activeTab === 'entries' && (
-          <EntryManager
-            entries={entries}
-            rubric={rubric}
+            scorecards={scorecards}
             onAddEntry={handleAddEntry}
             onUpdateEntry={handleUpdateEntry}
             onDeleteEntry={handleDeleteEntry}
+            onUpdateRubric={handleUpdateRubric}
             onScoreEntry={(entryId) => {
               setActiveEntryId(entryId);
-              setActiveTab('scoring');
+              setActiveRole('hakim');
             }}
+            onExportMasterPDF={handleExportMasterPDF}
+            verifiedJudgeIds={verifiedJudgeIds}
           />
         )}
       </main>
@@ -335,7 +380,7 @@ export default function App() {
         );
       })()}
 
-      {/* Clean Editorial Footer */}
+      {/* Editorial Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 mt-auto text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -348,7 +393,7 @@ export default function App() {
 
           <div className="flex items-center gap-3 text-slate-500">
             <span>Urusetia: Pn. Gwen & Cg. Ajien</span>
-            <span aria-hidden="true">·</span>
+            <span aria-hidden="true" className="text-slate-700">·</span>
             <span>Kuching, Sarawak</span>
           </div>
         </div>

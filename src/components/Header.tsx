@@ -1,27 +1,39 @@
 import React from 'react';
-import { Award, FileText, Settings, Trophy, Video, Users, HelpCircle, Lock, ShieldCheck } from 'lucide-react';
-import { Judge } from '../types/rubric';
+import {
+  GraduationCap,
+  Scale,
+  ShieldAlert,
+  Users,
+  Lock,
+  ShieldCheck,
+  Download,
+  HelpCircle,
+  Settings
+} from 'lucide-react';
+import { AppRole, Judge } from '../types/rubric';
 
 interface HeaderProps {
-  activeTab: 'scoring' | 'leaderboard' | 'customizer' | 'entries' | 'rules';
-  setActiveTab: (tab: 'scoring' | 'leaderboard' | 'customizer' | 'entries' | 'rules') => void;
+  activeRole: AppRole;
+  setActiveRole: (role: AppRole) => void;
   judges: Judge[];
   activeJudgeId: string;
   setActiveJudgeId: (id: string) => void;
   onExportMasterPDF: () => void;
   verifiedJudgeIds?: string[];
   onOpenJudgePinModal?: () => void;
+  onOpenRulesModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  activeTab,
-  setActiveTab,
+  activeRole,
+  setActiveRole,
   judges,
   activeJudgeId,
   setActiveJudgeId,
   onExportMasterPDF,
   verifiedJudgeIds = [],
-  onOpenJudgePinModal
+  onOpenJudgePinModal,
+  onOpenRulesModal
 }) => {
   const activeJudge = judges.find((j) => j.id === activeJudgeId) || judges[0];
   const isVerified = verifiedJudgeIds.includes(activeJudge.id);
@@ -30,169 +42,125 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-40 bg-slate-900 border-b border-slate-800 text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Zone 1: Brand Title (Single text element wordmark in display face) */}
+          {/* Zone 1: Brand Wordmark */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-lg">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-extrabold text-base shadow-inner">
               LP
             </div>
-            <a
-              href="#home"
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveTab('scoring');
-              }}
-              className="text-lg font-bold tracking-tight text-white hover:text-amber-400 transition-colors"
-            >
-              Lensa Patriot
-            </a>
+            <div>
+              <div className="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+                <span>Lensa Patriot</span>
+                <span className="text-[10px] uppercase font-mono font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.2 rounded">
+                  SMK St. Thomas
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 hidden sm:block">
+                Sistem Pemarkahan & Rubrik Digital
+              </p>
+            </div>
           </div>
 
-          {/* Zone 2: Navigation Links (Clean text links with hover underline / active state) */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2 text-sm font-medium text-slate-300">
+          {/* Zone 2: Distinct 3-Role Navigation Switcher */}
+          <nav className="flex items-center bg-slate-950/80 p-1 rounded-xl border border-slate-800">
             <button
-              onClick={() => setActiveTab('scoring')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
-                activeTab === 'scoring'
-                  ? 'bg-slate-800 text-amber-400 font-semibold shadow-sm'
-                  : 'hover:text-white hover:bg-slate-800/50'
+              type="button"
+              onClick={() => setActiveRole('peserta')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeRole === 'peserta'
+                  ? 'bg-amber-400 text-slate-950 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <FileText className="w-4 h-4" />
-              <span>Borang Pemarkahan</span>
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>Peserta</span>
             </button>
 
             <button
-              onClick={() => setActiveTab('leaderboard')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
-                activeTab === 'leaderboard'
-                  ? 'bg-slate-800 text-amber-400 font-semibold shadow-sm'
-                  : 'hover:text-white hover:bg-slate-800/50'
+              type="button"
+              onClick={() => setActiveRole('hakim')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeRole === 'hakim'
+                  ? 'bg-amber-400 text-slate-950 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <Trophy className="w-4 h-4" />
-              <span>Papan Pendahulu</span>
+              <Scale className="w-3.5 h-3.5" />
+              <span>Hakim</span>
             </button>
 
             <button
-              onClick={() => setActiveTab('customizer')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
-                activeTab === 'customizer'
-                  ? 'bg-slate-800 text-amber-400 font-semibold shadow-sm'
-                  : 'hover:text-white hover:bg-slate-800/50'
+              type="button"
+              onClick={() => setActiveRole('penganjur')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeRole === 'penganjur'
+                  ? 'bg-amber-400 text-slate-950 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <Settings className="w-4 h-4" />
-              <span>Urus Rubrik</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('entries')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
-                activeTab === 'entries'
-                  ? 'bg-slate-800 text-amber-400 font-semibold shadow-sm'
-                  : 'hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Video className="w-4 h-4" />
-              <span>Senarai Entri</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('rules')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
-                activeTab === 'rules'
-                  ? 'bg-slate-800 text-amber-400 font-semibold shadow-sm'
-                  : 'hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <HelpCircle className="w-4 h-4" />
-              <span>Syarat & Hadiah</span>
+              <Settings className="w-3.5 h-3.5" />
+              <span>Penganjur</span>
             </button>
           </nav>
 
-          {/* Zone 3: Primary Actions (Judge Switcher & Master PDF Export) */}
+          {/* Zone 3: Role-Specific Action Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Judge Selector Control */}
-            <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 rounded px-2.5 py-1 text-xs">
-              <Users className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <div className="flex flex-col">
-                <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-                  <span>Hakim Aktif:</span>
-                  {isVerified ? (
-                    <span className="text-[10px] text-emerald-400 font-semibold inline-flex items-center gap-0.5">
-                      <ShieldCheck className="w-2.5 h-2.5" /> Disahkan
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={onOpenJudgePinModal}
-                      className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold inline-flex items-center gap-0.5 underline cursor-pointer"
-                    >
-                      <Lock className="w-2.5 h-2.5" /> Perlu PIN
-                    </button>
-                  )}
-                </span>
-                <select
-                  value={activeJudgeId}
-                  onChange={(e) => setActiveJudgeId(e.target.value)}
-                  className="bg-transparent text-white font-semibold focus:outline-none cursor-pointer pr-1"
-                >
-                  {judges.map((j) => {
-                    const jVerified = verifiedJudgeIds.includes(j.id);
-                    return (
+            {activeRole === 'hakim' && (
+              <div className="flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 rounded-lg px-2.5 py-1 text-xs">
+                <Users className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                    <span>Hakim:</span>
+                    {isVerified ? (
+                      <span className="text-[10px] text-emerald-400 font-semibold inline-flex items-center gap-0.5">
+                        <ShieldCheck className="w-2.5 h-2.5" /> Disahkan
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={onOpenJudgePinModal}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold inline-flex items-center gap-0.5 underline cursor-pointer"
+                      >
+                        <Lock className="w-2.5 h-2.5" /> Perlu PIN
+                      </button>
+                    )}
+                  </span>
+                  <select
+                    value={activeJudgeId}
+                    onChange={(e) => setActiveJudgeId(e.target.value)}
+                    className="bg-transparent text-white font-semibold focus:outline-none cursor-pointer pr-1 text-xs"
+                  >
+                    {judges.map((j) => (
                       <option key={j.id} value={j.id} className="bg-slate-900 text-white">
-                        {j.name} ({j.role}) {jVerified ? '✓' : ''}
+                        {j.name}
                       </option>
-                    );
-                  })}
-                </select>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Quick Export Master PDF */}
-            <button
-              onClick={onExportMasterPDF}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-900 bg-amber-400 hover:bg-amber-300 rounded shadow-sm transition-colors whitespace-nowrap"
-              title="Eksport Papan Keputusan ke PDF Rasmi"
-            >
-              <Award className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Eksport PDF</span>
-            </button>
+            {activeRole === 'penganjur' && (
+              <button
+                type="button"
+                onClick={onExportMasterPDF}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-xs transition-colors shadow cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Eksport PDF</span>
+              </button>
+            )}
+
+            {activeRole === 'peserta' && onOpenRulesModal && (
+              <button
+                type="button"
+                onClick={onOpenRulesModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 font-semibold rounded-lg text-xs transition-colors cursor-pointer"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Syarat & Hadiah</span>
+              </button>
+            )}
           </div>
-        </div>
-
-        {/* Mobile Sub-Navigation Bar */}
-        <div className="flex md:hidden items-center justify-around py-2 border-t border-slate-800 text-xs">
-          <button
-            onClick={() => setActiveTab('scoring')}
-            className={`px-2 py-1 ${activeTab === 'scoring' ? 'text-amber-400 font-bold' : 'text-slate-400'}`}
-          >
-            Pemarkahan
-          </button>
-          <button
-            onClick={() => setActiveTab('leaderboard')}
-            className={`px-2 py-1 ${activeTab === 'leaderboard' ? 'text-amber-400 font-bold' : 'text-slate-400'}`}
-          >
-            Leaderboard
-          </button>
-          <button
-            onClick={() => setActiveTab('customizer')}
-            className={`px-2 py-1 ${activeTab === 'customizer' ? 'text-amber-400 font-bold' : 'text-slate-400'}`}
-          >
-            Rubrik
-          </button>
-          <button
-            onClick={() => setActiveTab('entries')}
-            className={`px-2 py-1 ${activeTab === 'entries' ? 'text-amber-400 font-bold' : 'text-slate-400'}`}
-          >
-            Entri
-          </button>
-          <button
-            onClick={() => setActiveTab('rules')}
-            className={`px-2 py-1 ${activeTab === 'rules' ? 'text-amber-400 font-bold' : 'text-slate-400'}`}
-          >
-            Syarat
-          </button>
         </div>
       </div>
     </header>
